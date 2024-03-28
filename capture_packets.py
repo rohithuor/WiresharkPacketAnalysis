@@ -1,4 +1,19 @@
 import pyshark
+import geoip2.database
+
+# Load GeoIP database
+reader = geoip2.database.Reader('GeoLite2-City.mmdb')
+
+def get_location(ip_address):
+    try:
+        response = reader.city(ip_address)
+        country = response.country.name
+        city = response.city.name
+        return f"{city}, {country}"
+    except geoip2.errors.AddressNotFoundError:
+        return "Private IP"
+    except Exception as e:
+        return f"Error: {e}"
 
 def packet_handler(packet):
     # Print basic information about each packet
@@ -9,11 +24,11 @@ def packet_handler(packet):
     # Check if the packet is TCP or UDP
     if packet.transport_layer == "TCP":
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'src'):
-            print("Source IP:", packet.ip.src)
+            print("Source IP:", packet.ip.src, "Location:", get_location(packet.ip.src))
         else:
             print("Source IP: N/A")
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'dst'):
-            print("Destination IP:", packet.ip.dst)
+            print("Destination IP:", packet.ip.dst, "Location:", get_location(packet.ip.dst))
         else:
             print("Destination IP: N/A")
         if hasattr(packet, 'tcp') and hasattr(packet.tcp, 'srcport'):
@@ -26,11 +41,11 @@ def packet_handler(packet):
             print("Destination Port: N/A")
     elif packet.transport_layer == "UDP":
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'src'):
-            print("Source IP:", packet.ip.src)
+            print("Source IP:", packet.ip.src, "Location:", get_location(packet.ip.src))
         else:
             print("Source IP: N/A")
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'dst'):
-            print("Destination IP:", packet.ip.dst)
+            print("Destination IP:", packet.ip.dst, "Location:", get_location(packet.ip.dst))
         else:
             print("Destination IP: N/A")
         if hasattr(packet, 'udp') and hasattr(packet.udp, 'srcport'):
@@ -41,6 +56,10 @@ def packet_handler(packet):
             print("Destination Port:", packet.udp.dstport)
         else:
             print("Destination Port: N/A")
+    
+    # Additional packet details
+    print("Packet Length:", packet.length)
+    print("Packet Data:", packet)
     
     # Check if the packet has data
     try:
