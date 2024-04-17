@@ -80,7 +80,7 @@ def main():
     capture = pyshark.LiveCapture(interface)
     
     # Start capturing packets indefinitely and process each packet
-    for packet in capture.sniff_continuously(packet_count=10):
+    for packet in capture.sniff_continuously(packet_count=20):
         packet_handler(packet)
 
 if __name__ == "__main__":
