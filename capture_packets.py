@@ -1,5 +1,6 @@
 import pyshark
 import geoip2.database
+import socket
 
 # Load GeoIP database
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
@@ -15,6 +16,15 @@ def get_location(ip_address):
     except Exception as e:
         return f"Error: {e}"
 
+def get_website(ip_address):
+    try:
+        website = socket.gethostbyaddr(ip_address)[0]
+        return website
+    except socket.herror:
+        return "Unknown"
+    except Exception as e:
+        return f"Error: {e}"
+
 def packet_handler(packet):
     # Print basic information about each packet
     print("Packet Info:")
@@ -24,11 +34,13 @@ def packet_handler(packet):
     # Check if the packet is TCP or UDP
     if packet.transport_layer == "TCP":
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'src'):
-            print("Source IP:", packet.ip.src, "Location:", get_location(packet.ip.src))
+            source_ip = packet.ip.src
+            print("Source IP:", source_ip, "Location:", get_location(source_ip), "Website:", get_website(source_ip))
         else:
             print("Source IP: N/A")
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'dst'):
-            print("Destination IP:", packet.ip.dst, "Location:", get_location(packet.ip.dst))
+            destination_ip = packet.ip.dst
+            print("Destination IP:", destination_ip, "Location:", get_location(destination_ip), "Website:", get_website(destination_ip))
         else:
             print("Destination IP: N/A")
         if hasattr(packet, 'tcp') and hasattr(packet.tcp, 'srcport'):
@@ -41,11 +53,13 @@ def packet_handler(packet):
             print("Destination Port: N/A")
     elif packet.transport_layer == "UDP":
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'src'):
-            print("Source IP:", packet.ip.src, "Location:", get_location(packet.ip.src))
+            source_ip = packet.ip.src
+            print("Source IP:", source_ip, "Location:", get_location(source_ip), "Website:", get_website(source_ip))
         else:
             print("Source IP: N/A")
         if hasattr(packet, 'ip') and hasattr(packet.ip, 'dst'):
-            print("Destination IP:", packet.ip.dst, "Location:", get_location(packet.ip.dst))
+            destination_ip = packet.ip.dst
+            print("Destination IP:", destination_ip, "Location:", get_location(destination_ip), "Website:", get_website(destination_ip))
         else:
             print("Destination IP: N/A")
         if hasattr(packet, 'udp') and hasattr(packet.udp, 'srcport'):
@@ -80,7 +94,7 @@ def main():
     capture = pyshark.LiveCapture(interface)
     
     # Start capturing packets indefinitely and process each packet
-    for packet in capture.sniff_continuously(packet_count=20):
+    for packet in capture.sniff_continuously(packet_count=3):
         packet_handler(packet)
 
 if __name__ == "__main__":
